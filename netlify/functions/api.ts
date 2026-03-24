@@ -19,7 +19,9 @@ const handler: Handler = async (event: HandlerEvent) => {
     };
   }
 
-  const path = event.path.replace("/.netlify/functions/api", "");
+  const path = event.path
+    .replace("/.netlify/functions/api", "")
+    .replace("/api", "");
 
   if (path === "/create-web-call") {
     try {
