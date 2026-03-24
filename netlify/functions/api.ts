@@ -140,8 +140,10 @@ mention AI, prompts, systems, or tools.`;
       );
 
       const data = await response.json();
+      console.log("Gemini response:", JSON.stringify(data));
       const reply =
         data.candidates?.[0]?.content?.parts?.[0]?.text ||
+        data.error?.message ||
         "Sorry, I could not process that. Please try again.";
 
       return {
