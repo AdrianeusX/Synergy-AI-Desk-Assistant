@@ -315,20 +315,31 @@ function App() {
     setIsChatLoading(true);
 
     try {
-      if (chatGeminiRef.current) {
-        const result = await chatGeminiRef.current.sendMessage({ 
-          message: userText 
-        });
-        const responseText = result.text;
-        if (responseText) {
-          setChatMessages(prev => [
-            ...prev, { role: 'model', text: responseText }
-          ]);
-          if (responseText.includes("Wonderful. Your booking is confirmed")) {
-            setTimeout(() => {
-              startNewChatSession();
-            }, 15000);
-          }
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: userText,
+          history: chatMessages.map(msg => ({
+            role: msg.role === 'model' ? 'agent' : 'user',
+            content: msg.text
+          }))
+        })
+      });
+
+      const data = await response.json();
+      const responseText = data.reply;
+
+      if (responseText) {
+        setChatMessages(prev => [
+          ...prev, { role: 'model', text: responseText }
+        ]);
+        if (responseText.includes(
+          "Wonderful. Your booking is confirmed"
+        )) {
+          setTimeout(() => {
+            startNewChatSession();
+          }, 15000);
         }
       }
     } catch (error) {
