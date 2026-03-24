@@ -203,7 +203,7 @@ function App() {
       if (process.env.API_KEY) {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         chatGeminiRef.current = ai.chats.create({
-          model: 'gemini-3-flash-preview',
+          model: 'gemini-2.5-flash',
           config: { systemInstruction: SYSTEM_INSTRUCTION },
           history: [
             {
@@ -315,38 +315,57 @@ function App() {
     setIsChatLoading(true);
 
     try {
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: userText,
-          history: chatMessages.map(msg => ({
-            role: msg.role === 'model' ? 'agent' : 'user',
-            content: msg.text
-          }))
-        })
-      });
-
-      const data = await response.json();
-      const responseText = data.reply;
-
-      if (responseText) {
-        setChatMessages(prev => [
-          ...prev, { role: 'model', text: responseText }
-        ]);
-        if (responseText.includes(
-          "Wonderful. Your booking is confirmed"
-        )) {
-          setTimeout(() => {
-            startNewChatSession();
-          }, 15000);
+      if (chatGeminiRef.current) {
+        const result = await chatGeminiRef.current
+          .sendMessage({ message: userText });
+        const responseText = result.text;
+        if (responseText) {
+          setChatMessages(prev => [
+            ...prev, { role: 'model', text: responseText }
+          ]);
+          if (responseText.includes(
+            "Wonderful. Your booking is confirmed"
+          )) {
+            setTimeout(() => {
+              startNewChatSession();
+            }, 15000);
+          }
+        }
+      } else {
+        const response = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: userText,
+            history: chatMessages.map(msg => ({
+              role: msg.role === 'model' ? 'agent' : 'user',
+              content: msg.text
+            }))
+          })
+        });
+        if (!response.ok) {
+          throw new Error('API request failed');
+        }
+        const data = await response.json();
+        const responseText = data.reply;
+        if (responseText) {
+          setChatMessages(prev => [
+            ...prev, { role: 'model', text: responseText }
+          ]);
+          if (responseText.includes(
+            "Wonderful. Your booking is confirmed"
+          )) {
+            setTimeout(() => {
+              startNewChatSession();
+            }, 15000);
+          }
         }
       }
     } catch (error) {
       console.error('Chat error:', error);
-      setChatMessages(prev => [...prev, { 
-        role: 'model', 
-        text: 'Sorry, something went wrong. Please try again.' 
+      setChatMessages(prev => [...prev, {
+        role: 'model' as const,
+        text: 'Sorry, something went wrong. Please try again.'
       }]);
     } finally {
       setIsChatLoading(false);
