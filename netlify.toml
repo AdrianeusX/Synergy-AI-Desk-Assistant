@@ -9,8 +9,14 @@
   directory = "netlify/functions"
 
 [[redirects]]
-  from = "/api/*"
-  to = "/.netlify/functions/api/:splat"
+  from = "/api/create-web-call"
+  to = "/.netlify/functions/api/create-web-call"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/chat"
+  to = "/.netlify/functions/api/chat"
   status = 200
   force = true
 
